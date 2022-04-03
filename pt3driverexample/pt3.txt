@@ -1,0 +1,14 @@
+#program pt3
+   1 ; PT3 driver v2 by em00k 
+   2 ; install the driver
+  10 .install "pt3driver.drv"
+  15 ; load the player a bank
+  20 LOAD "vortex.bin" BANK 20
+  25 ; load the tune into a bank
+  30 LOAD "tune.pt3" BANK 21
+  35 ; tell the driver which banks
+  40 DRIVER 127,1,20,21
+  45 ; cmd 127,2,<0 stop|1 init|2 play|3 mute>
+  50 DRIVER 127,2,1 :; start tune
+ 999 STOP 
+1000 SAVE "pt3.bas"
