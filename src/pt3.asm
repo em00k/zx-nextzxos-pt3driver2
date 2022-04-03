@@ -26,7 +26,7 @@ ST_INIT_TUNE			equ 1
 ST_PLAYING				equ 2 
 ST_STOP 				equ 3 
 NEXTREG_PORT_243B		equ $243b
-AY_CHIP_SELECT_FFFD		equ $fffd 
+AY_CHIP_INFO_BFF5		equ $BFF5
 PER_4_REGISTER_09		equ $09 
 
 ; **************************************************************
@@ -41,13 +41,13 @@ PER_4_REGISTER_09		equ $09
 ; 
 ; id : 
 ; - 1: set bank id for player & tune   							DRIVER 127,1,n,n
-; - 2: music control & optional set ay chip to use				DRIVER 127,2,n,[n] 
+; - 2: music control 											DRIVER 127,2,n
 ; 
 
 ; **************************************************************
 
 api_entry:
-	jr      pt3_api
+	jr		pt3_api
 	nop
 
 ; At $0003 is the entry point for the interrupt handler (which is why there's a
@@ -60,34 +60,34 @@ im1_entry:
 
 reloc_ir_1:												; pt3_banks_imr
 	ld		hl,pt3_banks
-	ld 		a,(hl)										; read pt3_bank value
+	ld		a,(hl)										; read pt3_bank value
 	or		a									
 	jr		z, im1_skip									; it was zero so skip im
 	inc		hl											
-	ld 		a,(hl)										; read pt3_bank+1 (tune banks)
+	ld		a,(hl)										; read pt3_bank+1 (tune banks)
 	or		a
 	jr		z, im1_skip									; it was zero so skip im 
 
 	push	hl,bc,de,ix,iy 								; push all registers 
 	exx
-	push 	hl,de,bc
+	push	hl,de,bc
 	ex		af, af'
-	push 	af
+	push	af
 
 reloc_ir_2:												; call backup banks routines	
 
 	call	activate_user_bank							
 														; and set banks for player 
 reloc_ir_3:
-	ld 		a,(pt3_status)								; 0 not playing, 1 init, 2 playing, 3 mute and stop
+	ld		a,(pt3_status)								; 0 not playing, 1 init, 2 playing, 3 mute and stop
 	or		a
 	jr		z, skipplayer
 
-	cp 		ST_PLAYING									; are we playing?
+	cp		ST_PLAYING									; are we playing?
 	jr		z, playtune 									
 
-	cp 		ST_INIT_TUNE								; init tune? 
-	jr 		z, init_tune
+	cp		ST_INIT_TUNE								; init tune? 
+	jr		z, init_tune
 
 	; then we must be stopping 
 	
@@ -108,24 +108,22 @@ init_tune:
 reloc_ir_5:	
 	ld		(pt3_status),a 				
 playtune: 				
-;	ld		bc,AY_CHIP_SELECT_FFFD
-
-;	ld		a,(ay_chip_select)
-;	ld		a,254
-;	out		(c),a 
-	call 	PT3_PLAY							 		; Play a frame of music 
-;	ld		a,$ff
-;	ld		bc,AY_CHIP_SELECT_FFFD
-;	out		(c),a 
+	ld		bc,AY_CHIP_INFO_BFF5						; we want to read the current
+	in		a,(c)										; selected AY config 
+	push 	af  										; save on the stack
+	call 	PT3_PLAY									; Play a frame of music 
+	pop		af 											; get the previous 
+	ld		bc,AY_CHIP_INFO_BFF5
+	out		(c),a 
 
 skipplayer:
 reloc_ir_6:
 	call	restore_bank								; restore banks 
-	pop 	af 
+	pop		af 
 	ex		af, af' 
 	pop		bc,de,hl
 	exx 
-	pop		iy,ix,de,bc,hl 								; restore regs 
+	pop		iy,ix,de,bc,hl								; restore regs 
 im1_skip:
 	ret
 
@@ -309,20 +307,20 @@ reloc_br_4:
 	ret
 
 pt3_banks:
-        defb	0,0,0 								; first bank pt3 player, second + third tune banks
+		defb	0,0,0 								; first bank pt3 player, second + third tune banks
 ay_chip_select:										; 0-2 AY chip
-        defb	0
+		defb	0
 pt3_status:
 		defb	0 									; holds 0,1,2,3 for ST_STOP, ST_INIT, ST_PLAYING, ST_MUTE+PAUSE
 stored_banks:
-        defb	0,0,0
+		defb	0,0,0
 	
 ; this ensures the build is 512 long (not 100% sure why though - probably memory baseds)
 	IF $ > 512
 		DISPLAY "Driver code exceeds 512 bytes"
 		LUA ALLPASS 
 			 sj.exit(1000)
-    	ENDLUA
+		ENDLUA
 		
 	ELSE
 		defs    512-$
@@ -330,13 +328,13 @@ stored_banks:
 	ENDIF
 
 reloc_start:
-        
+		
 	defw	reloc_ir_1+2				; ld a,(pt3_bank)
-    defw	reloc_ir_2+2				; user bank 
-    defw	reloc_ir_3+2
-    defw	reloc_ir_4+2
-    defw	reloc_ir_5+2
-    defw	reloc_ir_6+2
+	defw	reloc_ir_2+2				; user bank 
+	defw	reloc_ir_3+2
+	defw	reloc_ir_4+2
+	defw	reloc_ir_5+2
+	defw	reloc_ir_6+2
 	defw	reloc_c1_1+2
 	defw	reloc_c1_2+2
 	defw	reloc_c1_3+2

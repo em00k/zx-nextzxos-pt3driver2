@@ -71,4 +71,4 @@ relocs  equ     (reloc_end-reloc_start)/2
 driverend
 
         savebin "pt3driver.drv",start,driverend-start
-        savebin "h:/pt3driver/pt3driver.drv",start,driverend-start
+        ;savebin "h:/pt3driver/pt3driver.drv",start,driverend-start
