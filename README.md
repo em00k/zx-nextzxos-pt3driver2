@@ -9,7 +9,9 @@ pt3 driver v2 for NextZXOS
 - uses Sergy Bulba's vt2 replayer
 
 Lost v1 sources so had to rewrite, this time adding user banks
-you cannot specifiy which AY to use, as this is baked into the replayer
+you cannot specifiy which AY to use, as this is baked into the replayer.
+
+The player will always use AY0 
 
  Example usage : 
  ```basic
